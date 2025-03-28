@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaba9f16a49e6a745b5b0506d4db927f, type: 3}
+  m_Name: NewRangedWeapon
+  m_EditorClassIdentifier: 
+  <type>k__BackingField: 1
+  <nameWeapon>k__BackingField: test
+  <damage>k__BackingField: 5
+  <range>k__BackingField: 5
+  <sprite>k__BackingField: {fileID: 1369769536, guid: e60ad25146c8a2d488ec9e688e2234b6, type: 3}
+  <fireRate>k__BackingField: 0.5
+  <ammoCapacity>k__BackingField: 30
+  <reloadTime>k__BackingField: 1
+  <positionShotPoint>k__BackingField: {x: 0.645, y: 0.076}
+  <bullet>k__BackingField: {fileID: 7773132172042542186, guid: 438c178e62db19a48b452afd75e759a5, type: 3}
