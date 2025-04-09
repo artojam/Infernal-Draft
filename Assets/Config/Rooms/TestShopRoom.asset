@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47579c1fd795b6b49b0f936f784198bf, type: 3}
+  m_Name: TestShopRoom
+  m_EditorClassIdentifier: 
+  nameTileConfig: '[TestLevel]'
+  <chance>k__BackingField: 25
+  <type>k__BackingField: 1
+  <room>k__BackingField: {fileID: 7977708914473386125, guid: 996c02833940bc94e813bbb589b8fda7, type: 3}
+  <size>k__BackingField: {x: 8, y: 6}

@@ -4,7 +4,7 @@ public class RandomSelector
 {
     private static readonly System.Random _random = new System.Random();
 
-    public static RoomData SelectRandom(RoomData[] items)
+    public static RoomConfig SelectRandom(RoomConfig[] items)
     {
         int randomValue = _random.Next(100);
         byte cumulative = 0;

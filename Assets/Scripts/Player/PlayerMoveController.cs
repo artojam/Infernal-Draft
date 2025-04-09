@@ -1,15 +1,18 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
     private float Speed = 5f;
+
     [SerializeField]
     private Joystick JoystickMove;
 
     private Rigidbody2D rb;
     private Vector2 movement;
     private Transform tr;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -21,7 +24,7 @@ public class PlayerController : MonoBehaviour
 #if UNITY_EDITOR || UNITY_STANDALONE
         MoveInputKeyboard();
 #endif
-        MoveInputJoystick();
+        //MoveInputJoystick();
         Rotat();
     }
 
@@ -56,6 +59,5 @@ public class PlayerController : MonoBehaviour
     private void Move()
     {
         rb.MovePosition(rb.position + movement * Speed * Time.fixedDeltaTime);
-        //rb.velocity = movement * Speed * 10 * Time.fixedDeltaTime;
     }
 }

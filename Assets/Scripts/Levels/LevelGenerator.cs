@@ -1,57 +1,45 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
-using System.Collections;
-using System.Drawing;
-using UnityEngine.UIElements;
-
-public enum TypeDir
-{
-    Up = 0,
-    Dawn,
-    Left,
-    Right
-}
 
 public class LevelGenerator : MonoBehaviour
 {
-    [SerializeField] 
-    private Tilemap mainTilemapWall; // Tilemap Стен
-
-    [SerializeField]
-    private Tilemap mainTilemapFloor; // Tilemap пола
-
-    [SerializeField] 
-    private RoomData startRoomPrefab; // Начальная комната
-    [SerializeField] 
-    private RoomData endRoomPrefab; // Конечная комната
-
-    [SerializeField] 
-    private RoomData[] roomPrefabs; // Обычные комнаты
+    public List<GameObject> debuglist = new List<GameObject>();
     
+    [SerializeField, Header("Static Rooms")] 
+    private RoomConfig startRoomPrefab; // Начальная комната
+
     [SerializeField] 
+    private RoomConfig endRoomPrefab; // Конечная комната
+
+    [SerializeField, Header("Rooms")] 
+    private RoomConfig[] roomPrefabs; // Обычные комнаты
+    
+    
+    [SerializeField, Header("Data")] 
     private int roomCount = 5; // Количество обычных комнат
 
     [SerializeField]
-    private Tilemap sourceTilemap;
+    private int maxCountShop = 1; // Максимальная колво магазинов
     [SerializeField]
-    private TileBase targetTile;
-    [SerializeField]
-    private TileBase newTile;
-    [SerializeField]
-    private TileBase wallTile;
+    private int maxCountTreasure = 1; // Максимальная колво сокровещниц
 
-    private List<Vector2Int> occupiedPositions = new List<Vector2Int>();
-    private Dictionary<Vector2Int, RoomData> rooms = new Dictionary<Vector2Int, RoomData>();
+
+
+
+    private int countShop;
+    private int countTreasure;
+
+
+    private Dictionary<Vector2Int, RoomConfig> rooms = new Dictionary<Vector2Int, RoomConfig>();
+    private List<Vector2Int> Dirs = new List<Vector2Int>();
 
     private Vector2Int currentPosition = Vector2Int.zero;
     private Vector2Int oldPosition = Vector2Int.zero;
     private Vector2Int dir;
     
-    private RoomData thisRoom = null;
-    private RoomData oldRoom = null;
-
-    private int numberRoom = 0;
+    private RoomConfig thisRoom = null;
+    private RoomConfig oldRoom = null;
 
     private bool isCreateRoom = true;
 
@@ -65,60 +53,96 @@ public class LevelGenerator : MonoBehaviour
         // Создаём стартовую комнату
         CreateRoom(startRoomPrefab, Vector2Int.zero);
         oldRoom = startRoomPrefab;
-        rooms[Vector2Int.zero] = oldRoom;
+        rooms[Vector2Int.zero] = startRoomPrefab;
 
-        for (numberRoom = 0; numberRoom < roomCount; numberRoom++)
+        while (rooms.Count < roomCount + 1)
         {
-            thisRoom = RandomSelector.SelectRandom(roomPrefabs);
+            thisRoom = ToRoom();
 
-            GetColledorPosition();
+            DetermineRoomDirection();
 
-            GetNextPosition(thisRoom);
-            if(isCreateRoom) CreateRoom(thisRoom, currentPosition);
+            NextPosition();
+            if(isCreateRoom) 
+                CreateRoom(thisRoom, currentPosition);
 
 
-            CreateColledor(oldPosition, currentPosition, oldRoom.size, thisRoom.size);
+            CreateCorridor(oldPosition, currentPosition, oldRoom.size, thisRoom.size);
+
             oldRoom = thisRoom;
         }
 
-        GetColledorPosition();
+        DetermineRoomDirection();
 
         // Добавляем конечную комнату в конце пути
         
-        GetNextPosition(endRoomPrefab);
+        NextPosition();
         CreateRoom(endRoomPrefab, currentPosition);
         thisRoom = endRoomPrefab;
-        CreateColledor(oldPosition, currentPosition, oldRoom.size, thisRoom.size);
+        CreateCorridor(oldPosition, currentPosition, oldRoom.size, thisRoom.size);
+        
+        // конец генерации
+        CreateCollider();
 
-        MergeTiles();
-        rooms.Clear();
-        rooms = null;
-        occupiedPositions.Clear();
-        occupiedPositions = null;
-        roomPrefabs = null;
-
-
-        Debug.Log("конец генерации");
+        Debug.Log($"конец генерации { rooms.Count }");
         System.GC.Collect();
         Resources.UnloadUnusedAssets();
-        Destroy(this);
     }
 
-
-    private void CreateRoom(RoomData roomPrefab, Vector2Int position)
+    private void CreateLevel()
     {
-        RoomData room = Instantiate(roomPrefab, new Vector3(position.x, position.y), Quaternion.identity);
+
+    } 
+
+
+    private RoomConfig ToRoom()
+    {
+        RoomConfig newRoom = RandomSelector.SelectRandom(roomPrefabs);
+        switch (newRoom.type)
+        {
+            case (TypeRoom.Shop):
+                if (countShop >= maxCountShop || rooms.Count < Mathf.RoundToInt(roomCount / 3))
+                {
+                    return ToRoom();
+                }
+                break;
+            case (TypeRoom.Treasure):
+                if (countTreasure >= maxCountTreasure || rooms.Count < Mathf.RoundToInt(roomCount / 3))
+                {
+                    return ToRoom();
+                }
+                break;
+        }
+
+        return newRoom;
+
+    } 
+
+
+    private void CreateRoom(RoomConfig roomData, Vector2Int position)
+    {
+        List<Vector2Int> dirProh = new List<Vector2Int>();
+
+        if (Dirs.Count > 0)
+        {
+            dirProh.Add(-dir);
+            dirProh.Add(Dirs[Dirs.Count - 1]);
+        }
+        else
+        {
+            dirProh.Add(-dir);
+        }
+
+        Room room = Instantiate(roomData.room, new Vector3(position.x - 0.5f, position.y - 0.5f), Quaternion.identity);
+
+        Vector2Int offset = currentPosition - (roomData.size / 2) + new Vector2Int(0, 1);
+        room.Init(roomData, currentPosition, offset, dirProh);
+        
         CopyTilesToMainTilemap(room, position);
-        Destroy(room.gameObject.transform.GetChild(0).gameObject);
-        //Destroy(room);
-        occupiedPositions.Add(position);
     }
 
-    private void CopyTilesToMainTilemap(RoomData room, Vector2Int position)
+    private void CopyTilesToMainTilemap(Room room, Vector2Int position)
     {
-        Tilemap roomTilemap = room.GetComponentInChildren<Tilemap>();
-
-        room.grid = Pathfinding.GenerateGridFromTilemap(roomTilemap, room.pos, room.size, newTile);
+        Tilemap roomTilemap = room.data.roomTilemap;
 
         if (roomTilemap == null) return;
 
@@ -133,31 +157,41 @@ public class LevelGenerator : MonoBehaviour
                 if (tile != null)
                 {
                     Vector3Int tilePosition = new Vector3Int(bounds.x + x, bounds.y + y, 0) + (Vector3Int)position;
-                    mainTilemapFloor.SetTile(tilePosition, newTile);
-                    if(tile != newTile)
-                        mainTilemapWall.SetTile(tilePosition, tile);
+                    
+                    GameController.controller.mainTilemapFloor
+                        .SetTile(tilePosition, GameController.controller.tiles.tileFloor);
+
+                    if(tile != GameController.controller.tiles.tileFloor)
+                        GameController.controller.mainTilemapWall.SetTile(tilePosition, tile);
                     
                 }
             }
         }
+        Destroy(room.gameObject.transform.GetChild(0).gameObject);
     }
 
-    public void CreateColledor(Vector2Int startRoom, Vector2Int endRoom, Vector2Int startSize, Vector2Int endSize)
+    public void CreateCorridor(Vector2Int startRoom, Vector2Int endRoom, Vector2Int startSize, Vector2Int endSize)
     {
         Vector2Int startOffset = (dir.x < 0 || dir.y > 0) ? dir : Vector2Int.zero;
         Vector2Int startOffsetVertical = (dir.y > 0) ? dir : Vector2Int.zero;
+
         Vector2Int startEdge = startRoom + dir * (startSize / 2) + startOffset - startOffsetVertical;
         Vector2Int startEdgeWall = startEdge + startOffsetVertical;
+        
         Vector2Int startEdgeWallX = startEdge + dir;
 
         Vector2Int endOffset = (dir.x < 0 || dir.y > 0) ? -dir : Vector2Int.zero;
         Vector2Int endOffsetVertical = (dir.y < 0) ? dir : Vector2Int.zero;
+        
         Vector2Int endEdge = endRoom - dir * (endSize / 2) - endOffset + endOffsetVertical;
         Vector2Int endEdgeWall = endEdge - endOffsetVertical;
+        
         Vector2Int endEdgeWallX = endEdge - dir;
 
         int steps = Mathf.Abs(endEdge.x - startEdge.x) + Mathf.Abs(endEdge.y - startEdge.y);
-        Vector3Int offsetFloor = new Vector3Int(dir.y < 0 ? dir.y : -dir.y, dir.x < 0 ? -dir.x : dir.x);
+        
+        Vector3Int offsetFloor = new Vector3Int(dir.y < 0 ? dir.y : -dir.y,
+                                                dir.x < 0 ? -dir.x : dir.x);
 
         bool isVertical = dir.x == 0;
         bool isDown = (dir.y < 0);
@@ -177,16 +211,20 @@ public class LevelGenerator : MonoBehaviour
             floorTiles.Add(posFloor + offsetFloor);
 
             Vector3Int posWall = (Vector3Int)(startEdgeWall + dir * i);
-            bool isEndWall = shouldWall ? (!isVertical || posWall.y > endEdgeWall.y) : (!isVertical || posWall.y < endEdgeWall.y);
+            bool isEndWall = shouldWall ? 
+                                          (!isVertical || posWall.y > endEdgeWall.y) : 
+                                          (!isVertical || posWall.y < endEdgeWall.y) ;
 
             if (isEndWall)
             {
                 targetTiles.Add(posWall - offsetFloor);
-                targetTiles.Add(posWall + offsetFloor * (isVertical ? 2 : 3));
+                targetTiles.Add(posWall + offsetFloor * (isVertical ? 2 : 3 ));
             }
 
             posWall = (Vector3Int)(startEdgeWallX + dir * i);
-            isEndWall = shouldWallX ? posWall.x > endEdgeWallX.x : posWall.x < endEdgeWallX.x;
+            isEndWall = shouldWallX ? 
+                                      posWall.x > endEdgeWallX.x : 
+                                      posWall.x < endEdgeWallX.x;
 
             if (!isVertical)
             {
@@ -196,30 +234,29 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        // Массовое применение тайлов, минимизируя вызовы SetTile()
-        foreach (var tile in floorTiles)
+        foreach (Vector3Int tile in floorTiles)
         {
-            mainTilemapFloor.SetTile(tile, newTile);
-            mainTilemapWall.SetTile(tile, null);
+            GameController.controller.mainTilemapFloor.SetTile(tile, GameController.controller.tiles.tileFloor);
+            GameController.controller.mainTilemapWall.SetTile(tile, null);
         }
-        foreach (var tile in wallTiles)
-            mainTilemapWall.SetTile(tile, wallTile);
+        foreach (Vector3Int tile in wallTiles)
+            GameController.controller.mainTilemapWall.SetTile(tile, GameController.controller.tiles.tileWallSide);
 
-        foreach (var tile in targetTiles)
-            mainTilemapWall.SetTile(tile, targetTile);
+        foreach (Vector3Int tile in targetTiles)
+            GameController.controller.mainTilemapWall.SetTile(tile, GameController.controller.tiles.tileWallTop);
     }
 
 
-    private void MergeTiles()
+    private void CreateCollider()
     {
-        BoundsInt bounds = mainTilemapWall.cellBounds;
+        BoundsInt bounds = GameController.controller.mainTilemapWall.cellBounds;
 
         List<Vector3Int> positionsToUpdate = new List<Vector3Int>();
 
         // Перебираем все тайлы в целевом тайлмапе и запоминаем позиции для обновления
         foreach (Vector3Int pos in bounds.allPositionsWithin)
         {
-            if (mainTilemapWall.GetTile(pos) == targetTile)
+            if (GameController.controller.mainTilemapWall.GetTile(pos) == GameController.controller.tiles.tileWallTop)
             {
                 positionsToUpdate.Add(pos);
             }
@@ -230,17 +267,17 @@ public class LevelGenerator : MonoBehaviour
         {
             foreach (Vector3Int pos in positionsToUpdate)
             {
-                sourceTilemap.SetTile(pos, newTile);
+                GameController.controller.colladerTilemap.SetTile(pos, GameController.controller.tiles.tileFloor);
             }
         }
-        sourceTilemap.gameObject.AddComponent<TilemapCollider2D>().usedByComposite = true;
-        sourceTilemap.gameObject.AddComponent<CompositeCollider2D>();
+        GameController.controller.colladerTilemap.gameObject.AddComponent<TilemapCollider2D>().usedByComposite = true;
+        GameController.controller.colladerTilemap.gameObject.AddComponent<CompositeCollider2D>();
 
-        sourceTilemap.CompressBounds(); // Уменьшает потребление памяти, если тайлы изменяются
+        GameController.controller.colladerTilemap.CompressBounds();
     }
 
 
-    private void GetColledorPosition()
+    private void DetermineRoomDirection()
     {
         Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
         List<Vector2Int> availableDirections = new List<Vector2Int>(directions);
@@ -249,56 +286,52 @@ public class LevelGenerator : MonoBehaviour
         for (int i = 0; i < 10 && availableDirections.Count > 0; i++)
         {
             dir = availableDirections[Random.Range(0, availableDirections.Count)];
-            newPosRoom = GetNextPosition(thisRoom, currentPosition, dir);
+            newPosRoom = GetNextPosition(currentPosition, dir);
 
             if (!rooms.ContainsKey(newPosRoom))
             {
+                switch (thisRoom.type)
+                {
+                    case TypeRoom.Shop:
+                        countShop++;
+                        break;
+
+                    case TypeRoom.Treasure:
+                        countTreasure++;
+                        break;
+                }
+
+
                 isCreateRoom = true;
+
+                Dirs.Add(dir);
+                rooms[currentPosition] = thisRoom;
+
                 return;
             }
+            else
+            {
+                isCreateRoom = false;
+                thisRoom = rooms[newPosRoom];
+            }
 
-            availableDirections.Remove(dir);
+             availableDirections.Remove(dir);
         }
 
-        isCreateRoom = false;
-        thisRoom = rooms[newPosRoom];
+        
     }
 
 
-    private void GetNextPosition(RoomData _room)
+    private void NextPosition()
     {
-        Vector2Int newPos = GetNextPosition(_room, currentPosition, dir);
-        _room.dir = GetDir(dir * -1);
-        _room.pos = newPos;
-        _room.offset = (newPos - (_room.size / 2));
+        Vector2Int newPos = GetNextPosition(currentPosition, dir);
+
         oldPosition = currentPosition;
 
         currentPosition = newPos;
-
-        rooms[currentPosition] = thisRoom;
     }
 
 
-    private Vector2Int GetNextPosition(RoomData _room, Vector2Int _pos, Vector2Int _dir)
-    {
-        return _pos + (_dir * 32);
-    }
-
-    private TypeDir GetDir(int index)
-    {
-        System.Array dirValues = System.Enum.GetValues(typeof(TypeDir));
-        TypeDir randomValue = (TypeDir)dirValues.GetValue(index);
-        return randomValue;
-    }
-
-    private TypeDir GetDir(Vector2Int value)
-    {
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-        System.Array dirValues = System.Enum.GetValues(typeof(TypeDir));
-
-        int index = System.Array.IndexOf(directions, value);
-
-        TypeDir randomValue = (TypeDir)dirValues.GetValue(index);
-        return randomValue;
-    }
+    private Vector2Int GetNextPosition(Vector2Int _pos, Vector2Int _dir) => 
+        _pos + (_dir * 32);
 }

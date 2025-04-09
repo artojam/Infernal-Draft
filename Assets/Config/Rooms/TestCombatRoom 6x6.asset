@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47579c1fd795b6b49b0f936f784198bf, type: 3}
+  m_Name: TestCombatRoom 6x6
+  m_EditorClassIdentifier: 
+  nameTileConfig: '[TestLevel]'
+  <chance>k__BackingField: 75
+  <type>k__BackingField: 3
+  <room>k__BackingField: {fileID: 6101815380149277359, guid: ec73e9fbe1763254e9268c5ab5435f11, type: 3}
+  <size>k__BackingField: {x: 6, y: 6}
