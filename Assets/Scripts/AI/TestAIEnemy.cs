@@ -1,29 +1,52 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 public class TestAIEnemy : MonoBehaviour
 {
-    public Room room;
+    private float distanseAttack = 2.5f;
+    
 
-    public Transform target;
+    private AgentMove move;
+    private Transform tr;
+    private Transform trPlayer;
 
+    private Coroutine corourineAttack;
 
-    private Pathfinding pathfinder;
-
-    private void OnPathFound(List<Vector2> path)
+    private void Start()
     {
-        if (path == null)
+        move = GetComponent<AgentMove>();
+        tr = transform;
+        trPlayer = GameController.controller.player.transform;
+
+        move.StartMove();
+        move.OnStopAgent += OnStop;
+        move.OnStartMovingAgent += OnMove;
+    }
+
+    private void OnStop()
+    {
+        corourineAttack = StartCoroutine(Attack());
+    }
+
+    private void OnMove()
+    {
+        StopCoroutine(corourineAttack);
+    }
+
+    private IEnumerator Attack()
+    {
+        Vector3 dir = (trPlayer.position - tr.position).normalized;
+
+        RaycastHit2D hit = Physics2D.Raycast(tr.position, dir, distanseAttack);
+        
+        if(hit.collider.CompareTag("Player"))
         {
-            Debug.Log("Путь не найден!");
-            return;
+            PlayerData player = hit.collider.GetComponent<PlayerData>();
+            Debug.Log("Player");
         }
 
-        Debug.Log("Путь найден:");
-        foreach (Vector2 point in path)
-        {
-            Debug.Log(point);
-        }
+        yield return new WaitForSeconds(0.1f);
     }
+
+
 }

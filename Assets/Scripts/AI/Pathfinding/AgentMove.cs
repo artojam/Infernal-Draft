@@ -1,13 +1,19 @@
+using System;
 using System.Collections;
-using UnityEditor.Build;
 using UnityEngine;
 
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class AgentMove : MonoBehaviour
 {
+    public event Action OnStopAgent;
+    public event Action OnStartMovingAgent;
     
     public float speed;
+    public float distanseToStop = 0.5f;
+
+    public bool isToStop 
+        { private set; get; }
 
     [SerializeField]
     private Transform target;
@@ -16,15 +22,29 @@ public class AgentMove : MonoBehaviour
     private Pathfinding pathfinding;
     
     private Rigidbody2D rb;
+    private Coroutine coroutineMove;
+
+
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        StartCoroutine(Move());
     }
+
+    public void StartMove() =>
+        coroutineMove = StartCoroutine(Move());
+
+    public void StopMove() =>
+        StopCoroutine(coroutineMove);
 
     private IEnumerator Move()
     {
+        if(target == null)
+        {
+            isToStop = true;
+            OnStopAgent?.Invoke();
+        }
+
         Vector3 lastTargetPos = target.position;
         Vector3[] path = new Vector3[(pathfinding.gridHeight)];
 
@@ -37,14 +57,17 @@ public class AgentMove : MonoBehaviour
 
         float correctionSpeed = 750f; // увеличина€ скорость при столкновении со стеной
 
-        int offset() => pathfinding.gridHeight - length;
+        int offset() => path.Length - length;
 
         while (true)
         {
             // ≈сли агент дошЄл до последней точки и таргет не двигаетс€, он должен сто€ть
-            if (index >= length + offset() || Vector3.Distance(rb.position, target.position) <= 0.5f)
+            if (Vector3.Distance(rb.position, target.position) <= distanseToStop && 
+                pathfinding.HasObstacleBetweenWorld(rb.position, target.position))
             {
                 rb.velocity = Vector2.zero;
+                OnStopAgent?.Invoke();
+                isToStop = true;
                 yield return new WaitForFixedUpdate(); // ∆дЄм, пока таргет не двинетс€
                 continue;
             }
@@ -53,6 +76,10 @@ public class AgentMove : MonoBehaviour
             // ≈сли агент видет таргет то идем на него
             if (pathfinding.HasObstacleBetweenWorld(rb.position, target.position))
             {
+                if (isToStop)
+                    OnStartMovingAgent?.Invoke();
+                isToStop = false;
+
                 lastTargetPos = target.position;
                 length = 1;
                 path[offset()] = target.position;
@@ -62,11 +89,16 @@ public class AgentMove : MonoBehaviour
             // ≈сли таргет сменил позицию, пересчитываем путь
             else if (Vector3.Distance(lastTargetPos, target.position) > 1f)
             {
+                if (isToStop)
+                    OnStartMovingAgent?.Invoke();
+                isToStop = false;
+
                 lastTargetPos = target.position;
+                
                 length = pathfinding.FindPath(rb.position, lastTargetPos, ref path);
+                
                 index = offset();
             }
-
             // ƒвигаемс€ к следующей точке пути
             nextPoint = path[index];
 
@@ -85,8 +117,8 @@ public class AgentMove : MonoBehaviour
             rb.velocity = dir * speed * correctionSpeed;
 
             // ≈сли достигли текущей точки пути, переходим к следующей
-            if (Vector3.Distance(rb.position, nextPoint) <= 0.04f && 
-                index < length + offset() - 1)
+            if (Vector3.Distance(rb.position, nextPoint) <= 0.05f && 
+                index < path.Length - 1)
             {
                 index++;
             }

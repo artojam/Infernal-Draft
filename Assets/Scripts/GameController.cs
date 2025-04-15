@@ -21,6 +21,8 @@ public class GameController : MonoBehaviour
     public TileConfig tiles
         { private set; get; }
 
+    public PlayerData player;
+
     public Pathfinding pathfinding;
 
     private void Awake()

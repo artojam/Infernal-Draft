@@ -91,12 +91,12 @@ public class Room : MonoBehaviour
                     if (grid[x * size.y + y] == 255)
                     {
                         Gizmos.color = Color.white;
-                        Gizmos.DrawSphere(pos, 0.2f);
+                        //Gizmos.DrawSphere(pos, 0.2f);
                     }
                     else
                     {
                         Gizmos.color = Color.red;
-                        Gizmos.DrawSphere(pos, 0.2f);
+                        //Gizmos.DrawSphere(pos, 0.2f);
                     }
                 }
             }

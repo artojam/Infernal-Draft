@@ -787,6 +787,7 @@ MonoBehaviour:
   <mainTilemapFloor>k__BackingField: {fileID: 45373565}
   <colladerTilemap>k__BackingField: {fileID: 327895773}
   <tiles>k__BackingField: {fileID: 11400000, guid: 4395c4986a5755c49b000980ed9e1a05, type: 2}
+  player: {fileID: 1850127388}
   pathfinding: {fileID: 194949960}
 --- !u!114 &194949960
 MonoBehaviour:
@@ -834,6 +835,7 @@ GameObject:
   - component: {fileID: 209207682}
   - component: {fileID: 209207681}
   - component: {fileID: 209207683}
+  - component: {fileID: 209207684}
   - component: {fileID: 209207679}
   m_Layer: 0
   m_Name: Enemy
@@ -855,6 +857,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 2.5
+  distanseToStop: 0.5
   target: {fileID: 1850127383}
   pathfinding: {fileID: 194949960}
 --- !u!212 &209207681
@@ -951,6 +954,18 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &209207684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 209207678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 352d75cb968f5ec4a94724ed74557f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &226565138
 GameObject:
   m_ObjectHideFlags: 0

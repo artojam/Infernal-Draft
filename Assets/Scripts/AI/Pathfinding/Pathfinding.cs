@@ -73,7 +73,7 @@ public class Pathfinding : MonoBehaviour
         PriorityQueue<Node> WaitingNodes = new PriorityQueue<Node>(); // хранит узлы для проверки
         HashSet<Vector2Int> CheckedNodes = new HashSet<Vector2Int>(); // хранит провереные позиции
 
-        Node[] parentNodes = new Node[grid.Length / 2];
+        Node[] parentNodes = new Node[Mathf.RoundToInt(grid.Length / 1.5f)];
 
         Node startNode = new Node(0, gridPosStart, gridPosEnd, -1);
         CheckedNodes.Add(startNode.pos);
@@ -89,17 +89,12 @@ public class Pathfinding : MonoBehaviour
                 int lengthBuffer = CalculatePathFromNode(currentNode, posStart, ref pathPointsBuffer, parentNodes);
                 Array.Reverse(pathPointsBuffer);
 
-                for(int i = lengthBuffer; i < pathPointsBuffer.Length; i += 2)
-                {
-                    Debug.DrawLine(pathPointsBuffer[i], pathPointsBuffer[i+1], Color.blue, 25f);
-                }
-
                 return lengthBuffer;
             }
 
             GetNeighbourNodes(currentNode, gridPosEnd, ref WaitingNodes, CheckedNodes, ref parentNodes, length);
         }
-        return 0;
+        return 1;
     }
 
     // находит соседей узла
@@ -114,13 +109,9 @@ public class Pathfinding : MonoBehaviour
         for (int i = 0; i < directions.GetLength(0); i++)
         {
             Vector2Int pos = new Vector2Int(directions[i, 0] + node.pos.x, directions[i, 1] + node.pos.y);
-            //DrawPoint(pos, Color.blue);
-            //Debug.Log($"{ pos.x } { gridWidth }, { pos.y } { gridHeight }, { grid[pos.x * gridHeight + pos.y] }");
             if (pos.x >= 0 && pos.x < gridWidth && pos.y >= 0 && pos.y < gridHeight && grid[pos.x * gridHeight + pos.y] < 255)
             {
                 Node newNode = new Node(node.G + 1, pos, posTarget, len);
-                Debug.Log(newNode.F);
-                DrawPoint(newNode.pos, Color.blue);
                 if (!CheckedNodes.Contains(newNode.pos))
                 {
                     
@@ -128,7 +119,8 @@ public class Pathfinding : MonoBehaviour
                     CheckedNodes.Add(newNode.pos);
 
                 }
-                parentNodesBuffer[len] = node;
+                if (len < parentNodesBuffer.Length && len > 0)
+                    parentNodesBuffer[len] = node;
             }
         }
 
@@ -152,10 +144,7 @@ public class Pathfinding : MonoBehaviour
 
         bool isPathToEnd = true;
 
-
-
-        pathBuffer[indexNode].x = GetWorldAxis(currentNode.pos.x);
-        pathBuffer[indexNode].y = GetWorldAxis(currentNode.pos.y);
+        pathBuffer[indexNode] = GetWorldPosition(currentNode.pos);
 
         //DrawPoint(pathBuffer[indexNode], Color.green);
 
@@ -168,15 +157,19 @@ public class Pathfinding : MonoBehaviour
         {
             if (HasObstacleBetweenNodeToWorld(currentNode, posStart))
             {
-                pathBuffer[indexNode].x = GetWorldAxis(oldNode.pos.x);// + 0.25f * -dir.x;
-                pathBuffer[indexNode].y = GetWorldAxis(oldNode.pos.y);// + 0.25f * -dir.y;
+                //pathBuffer[indexNode].x = GetWorldAxis(oldNode.pos.x);// + 0.25f * -dir.x;
+                //pathBuffer[indexNode].y = GetWorldAxis(oldNode.pos.y);// + 0.25f * -dir.y;
+
+                pathBuffer[indexNode] = GetWorldPosition(oldNode.pos);
 
                 //DrawPoint(pathBuffer[indexNode], Color.green);
 
                 indexNode++;
 
-                pathBuffer[indexNode].x = GetWorldAxis(currentNode.pos.x);// + 0.25f * -dir.x;
-                pathBuffer[indexNode].y = GetWorldAxis(currentNode.pos.y);// + 0.25f * -dir.y;
+                //pathBuffer[indexNode].x = GetWorldAxis(currentNode.pos.x);// + 0.25f * -dir.x;
+                //pathBuffer[indexNode].y = GetWorldAxis(currentNode.pos.y);// + 0.25f * -dir.y;
+
+                pathBuffer[indexNode] = GetWorldPosition(currentNode.pos);
 
                 //DrawPoint(pathBuffer[indexNode], Color.white);
 
@@ -195,8 +188,10 @@ public class Pathfinding : MonoBehaviour
             else
             {
 
-                pathBuffer[indexNode].x = GetWorldAxis(oldNode.pos.x);
-                pathBuffer[indexNode].y = GetWorldAxis(oldNode.pos.y);
+                //pathBuffer[indexNode].x = GetWorldAxis(oldNode.pos.x);
+                //pathBuffer[indexNode].y = GetWorldAxis(oldNode.pos.y);
+
+                pathBuffer[indexNode] = GetWorldPosition(oldNode.pos);
 
 
                 //DrawPoint(pathBuffer[indexNode], Color.green);
@@ -322,7 +317,7 @@ public class Pathfinding : MonoBehaviour
     public Vector3 GetWorldPosition(Vector2Int gridPosition) =>
         new Vector3(gridPosition.x + gridOffset.x, gridPosition.y + gridOffset.y);
 
-    public float GetWorldAxis(int axis) => axis + gridOffset.x;
+    public float GetWorldAxis(int axis) => axis + gridOffset.y;
 
 }
 

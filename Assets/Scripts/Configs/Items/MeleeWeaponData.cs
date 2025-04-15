@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class DebugDrawHelper
 {
-    public static void DrawArc(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 1f)
+    public static void DrawArc(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 25f)
     {
         int segments = 36; // Чем больше, тем плавнее дуга
         float angleStep = angle / segments;
@@ -46,7 +46,6 @@ public class MeleeWeaponData : WeaponData
 
     public override IEnumerator Attack(Transform attackPoint, Vector2 dir)
     {
-        Debug.Log("start");
         while (isAttack)
         {
             Collider2D[] enemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRadius, enemyLayer);
